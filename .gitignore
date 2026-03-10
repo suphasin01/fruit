@@ -1,26 +1,9 @@
-# Dependencies
 node_modules/
-
-# Build output
 dist/
-release/
-
-# macOS
-.DS_Store
-*.DS_Store
-
-# Logs
-*.log
-npm-debug.log*
-
-# Environment
 .env
-.env.local
-
-# Editor
-.vscode/
-.idea/
-src-ui/node_modules/
-src-ui/dist/
-src-ui/node_modules/
-src-ui/dist/
+data/
+*.log
+.DS_Store
+.claude/
+*.dxt
+*.mcpb
