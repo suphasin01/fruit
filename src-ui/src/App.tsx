@@ -47,6 +47,7 @@ export default function App() {
   const [allCompanies, setAllCompanies] = useState<Company[]>([])
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
   const [updateBanner, setUpdateBanner] = useState<{ type: 'downloading' | 'ready'; version: string } | null>(null)
+  const [appVersion, setAppVersion] = useState('')
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
@@ -54,8 +55,14 @@ export default function App() {
   }, [darkMode])
 
   useEffect(() => {
-    const api = (window as unknown as { electronAPI?: { onUpdateStatus: (cb: (d: { type: 'downloading' | 'ready'; version: string }) => void) => void } }).electronAPI
+    type ElectronAPI = {
+      onUpdateStatus: (cb: (d: { type: 'downloading' | 'ready'; version: string }) => void) => void
+      quitApp: () => void
+      getVersion: () => Promise<string>
+    }
+    const api = (window as unknown as { electronAPI?: ElectronAPI }).electronAPI
     api?.onUpdateStatus(data => setUpdateBanner(data))
+    api?.getVersion().then(v => setAppVersion(v)).catch(() => {})
   }, [])
 
   const toast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {
@@ -197,12 +204,31 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Status */}
-              <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a2235', borderRadius: 99, padding: '5px 10px', fontSize: 11, color: '#8892a4', flex: 1 }}>
+              {/* Version + Status */}
+              <div style={{ padding: '10px 14px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-inset)', borderRadius: 99, padding: '5px 10px', fontSize: 11, color: 'var(--text-secondary)', flex: 1 }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: apiOnline ? '#22d3a0' : '#f87171', flexShrink: 0, boxShadow: apiOnline ? '0 0 8px rgba(34,211,160,0.6)' : '0 0 8px rgba(248,113,113,0.5)', display: 'inline-block' }} />
                   <span>{apiOnline ? t('status_connected') : t('status_disconnected')}</span>
                 </div>
+                {appVersion && (
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500, flexShrink: 0 }}>v{appVersion}</span>
+                )}
+              </div>
+
+              {/* Quit button */}
+              <div style={{ padding: '0 10px 12px' }}>
+                <button
+                  onClick={() => {
+                    const api = (window as unknown as { electronAPI?: { quitApp: () => void } }).electronAPI
+                    api?.quitApp()
+                  }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 9, background: 'transparent', border: '1px solid rgba(248,113,113,0.2)', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: '#f87171', fontFamily: 'inherit', transition: 'all .18s' }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(248,113,113,0.08)'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.4)' }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.2)' }}
+                >
+                  <span style={{ fontSize: 16 }}>⏻</span>
+                  <span>{t('btn_quit') || 'ออกจากโปรแกรม'}</span>
+                </button>
               </div>
             </aside>
 

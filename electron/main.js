@@ -93,6 +93,10 @@ function setupAutoUpdater() {
   }, 4 * 60 * 60 * 1000);
 }
 
+// ── Quit IPC ─────────────────────────────────────────────────────────
+ipcMain.handle('quit-app', () => app.quit());
+ipcMain.handle('get-version', () => app.getVersion());
+
 // ── PDF Export IPC ────────────────────────────────────────────────────
 ipcMain.handle('export-pdf', async (_event, html, filename) => {
   const { filePath, canceled } = await dialog.showSaveDialog(mainWindow, {
@@ -136,6 +140,7 @@ function createWindow() {
       : {}),
   });
 
+  mainWindow.maximize();
   mainWindow.loadURL(API_URL);
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
