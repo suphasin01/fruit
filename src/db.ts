@@ -144,8 +144,8 @@ try { db.exec('ALTER TABLE contacts ADD COLUMN ref_number TEXT UNIQUE'); } catch
 
 const prefixMap: Record<string, string> = {
   quotation: 'QT', invoice: 'INV', receipt: 'REC',
-  billing_note: 'BN', cash_invoice: 'CI', purchase_order: 'PO', expense: 'EXP',
-  payslip: 'SAL', receipt_cert: 'RC',
+  billing_note: 'BN', purchase_order: 'PO', expense: 'EXP',
+  payslip: 'SAL', receipt_cert: 'RC', withholding_tax: 'WHT',
 };
 
 const contactPrefixMap: Record<string, string> = {
