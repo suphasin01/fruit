@@ -137,12 +137,42 @@ function all<T = unknown>(sql: string, ...params: unknown[]): T[] {
   return db.prepare(sql).all(...params) as T[];
 }
 
+// ── Migration: add ref_number to contacts ──────────────────────────────────
+try { db.exec('ALTER TABLE contacts ADD COLUMN ref_number TEXT UNIQUE'); } catch (_) { /* already exists */ }
+
 // ── Auto-number generator ───────────────────────────────────────────────────
 
 const prefixMap: Record<string, string> = {
   quotation: 'QT', invoice: 'INV', receipt: 'REC',
   billing_note: 'BN', cash_invoice: 'CI', purchase_order: 'PO', expense: 'EXP',
+  payslip: 'SAL', receipt_cert: 'RC',
 };
+
+const contactPrefixMap: Record<string, string> = {
+  customer: 'CUS', vendor: 'VEN', employee: 'EMP',
+};
+
+export function generateContactNumber(type: string): string {
+  const prefix = contactPrefixMap[type] ?? 'CON';
+  const year  = new Date().getFullYear().toString().slice(-2);
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const row = get<{ cnt: number }>(
+    `SELECT COUNT(*) as cnt FROM contacts WHERE type = ? AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')`,
+    type
+  );
+  const seq = String((row?.cnt ?? 0) + 1).padStart(4, '0');
+  return `${prefix}${year}${month}-${seq}`;
+}
+
+export function generateProductCode(): string {
+  const year  = new Date().getFullYear().toString().slice(-2);
+  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const row = get<{ cnt: number }>(
+    `SELECT COUNT(*) as cnt FROM products WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now','localtime')`
+  );
+  const seq = String((row?.cnt ?? 0) + 1).padStart(4, '0');
+  return `PRD${year}${month}-${seq}`;
+}
 
 export function generateDocNumber(type: string): string {
   const prefix = prefixMap[type] ?? 'DOC';
@@ -164,15 +194,18 @@ export const contactRepo = {
     : all('SELECT * FROM contacts ORDER BY name'),
   get: (id: number) => get('SELECT * FROM contacts WHERE id = ?', id),
   create: (data: Record<string, unknown>) => {
-    const r = run(`INSERT INTO contacts (type,name,tax_id,email,phone,address,branch,note) VALUES (:type,:name,:tax_id,:email,:phone,:address,:branch,:note)`, {
-      ':type': data.type ?? 'customer', ':name': data.name ?? '', ':tax_id': data.tax_id ?? null,
+    const type = (data.type as string) ?? 'customer';
+    const refNumber = generateContactNumber(type);
+    const r = run(`INSERT INTO contacts (type,name,tax_id,email,phone,address,branch,note,ref_number) VALUES (:type,:name,:tax_id,:email,:phone,:address,:branch,:note,:ref_number)`, {
+      ':type': type, ':name': data.name ?? '', ':tax_id': data.tax_id ?? null,
       ':email': data.email ?? null, ':phone': data.phone ?? null,
       ':address': data.address ?? null, ':branch': data.branch ?? null, ':note': data.note ?? null,
+      ':ref_number': refNumber,
     });
     return get('SELECT * FROM contacts WHERE id = ?', r.lastInsertRowid);
   },
   update: (id: number, data: Record<string, unknown>) => {
-    const allowed = ['type','name','tax_id','email','phone','address','branch','note'];
+    const allowed = ['type','name','tax_id','email','phone','address','branch','note','ref_number'];
     const fields = Object.keys(data).filter(k => allowed.includes(k)).map(k => `${k} = :${k}`).join(', ');
     if (fields) {
       const params: Record<string, unknown> = { ':id': id };
@@ -191,8 +224,9 @@ export const productRepo = {
   list: () => all('SELECT * FROM products ORDER BY name'),
   get: (id: number) => get('SELECT * FROM products WHERE id = ?', id),
   create: (data: Record<string, unknown>) => {
+    const code = (data.code as string) || generateProductCode();
     const r = run(`INSERT INTO products (code,name,description,unit,price,vat_type,category) VALUES (:code,:name,:description,:unit,:price,:vat_type,:category)`, {
-      ':code': data.code ?? null, ':name': data.name ?? '', ':description': data.description ?? null,
+      ':code': code, ':name': data.name ?? '', ':description': data.description ?? null,
       ':unit': data.unit ?? null, ':price': data.price ?? 0, ':vat_type': data.vat_type ?? 'excluded', ':category': data.category ?? null,
     });
     return get('SELECT * FROM products WHERE id = ?', r.lastInsertRowid);
