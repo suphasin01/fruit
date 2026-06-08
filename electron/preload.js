@@ -10,6 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('update-not-available');
     ipcRenderer.on('update-not-available', () => cb());
   },
+  onUpdateProgress: (cb) => {
+    ipcRenderer.removeAllListeners('update-progress');
+    ipcRenderer.on('update-progress', (_e, data) => cb(data));
+  },
   getVersion: () => ipcRenderer.invoke('get-version'),
   exportData: () => ipcRenderer.invoke('export-data'),
   importData: () => ipcRenderer.invoke('import-data'),

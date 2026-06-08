@@ -49,6 +49,7 @@ export default function App() {
   const [allCompanies, setAllCompanies] = useState<Company[]>([])
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
   const [updateBanner, setUpdateBanner] = useState<{ type: 'downloading' | 'ready'; version: string } | null>(null)
+  const [downloadProgress, setDownloadProgress] = useState(0)
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [appVersion, setAppVersion] = useState('')
 
@@ -69,9 +70,10 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    const api = (window as unknown as { electronAPI?: { onUpdateStatus: (cb: (d: { type: 'downloading' | 'ready'; version: string }) => void) => void; onUpdateNotAvailable: (cb: () => void) => void } }).electronAPI
+    const api = (window as unknown as { electronAPI?: { onUpdateStatus: (cb: (d: { type: 'downloading' | 'ready'; version: string }) => void) => void; onUpdateNotAvailable: (cb: () => void) => void; onUpdateProgress: (cb: (d: { percent: number }) => void) => void } }).electronAPI
     api?.onUpdateStatus(data => { setUpdateBanner(data); setCheckingUpdate(false) })
     api?.onUpdateNotAvailable(() => { setCheckingUpdate(false); toast(t('toast_up_to_date')) })
+    api?.onUpdateProgress(data => setDownloadProgress(data.percent))
   }, [t, toast])
 
   const checkForUpdates = () => {
@@ -332,11 +334,16 @@ export default function App() {
             {updateBanner && (
               <div style={{ position: 'fixed', bottom: 24, left: 260, zIndex: 998, background: updateBanner.type === 'ready' ? 'rgba(34,211,160,0.12)' : 'rgba(96,165,250,0.12)', border: `1px solid ${updateBanner.type === 'ready' ? 'rgba(34,211,160,0.4)' : 'rgba(96,165,250,0.4)'}`, borderRadius: 10, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
                 <span style={{ fontSize: 18 }}>{updateBanner.type === 'ready' ? '✅' : '⬇️'}</span>
-                <div>
+                <div style={{ minWidth: 180 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: updateBanner.type === 'ready' ? '#22d3a0' : '#60a5fa' }}>
-                    {updateBanner.type === 'ready' ? `v${updateBanner.version} พร้อมแล้ว` : `กำลังดาวน์โหลด v${updateBanner.version}...`}
+                    {updateBanner.type === 'ready' ? `v${updateBanner.version} พร้อมแล้ว` : `กำลังดาวน์โหลด v${updateBanner.version}... ${downloadProgress}%`}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  {updateBanner.type === 'downloading' && (
+                    <div style={{ marginTop: 5, height: 4, borderRadius: 2, background: 'rgba(96,165,250,0.15)' }}>
+                      <div style={{ height: '100%', borderRadius: 2, background: '#60a5fa', width: `${downloadProgress}%`, transition: 'width 0.3s ease' }} />
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 3 }}>
                     {updateBanner.type === 'ready' ? 'ดาวน์โหลดเสร็จแล้ว พร้อมติดตั้ง' : 'ดาวน์โหลดอัพเดทในพื้นหลัง'}
                   </div>
                 </div>
