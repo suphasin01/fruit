@@ -1,9 +1,17 @@
 {
-  "name": "flowaccount-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for FlowAccount Thai accounting platform",
-  "type": "module",
-  "main": "dist/index.js",
+  "name": "fruitbiz",
+  "version": "1.3.7",
+  "description": "Local offline business document system",
+  "author": {
+    "name": "Suphasin",
+    "email": "support@localbiz.app"
+  },
+  "homepage": "https://github.com/suphasin01/fruit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/suphasin01/fruit.git"
+  },
+  "main": "electron/main.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
@@ -18,8 +26,109 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/node": "^22.13.4",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.3"
+    "@electron/rebuild": "^3.6.0",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "electron": "^34.0.0",
+    "electron-builder": "^25.0.0",
+    "typescript": "^5.3.3"
+  },
+  "build": {
+    "appId": "com.localbiz.app",
+    "productName": "FruitBiz",
+    "copyright": "Copyright © 2026 FruitBiz",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "web/**/*",
+      "node_modules/**/*",
+      "!node_modules/electron${/*}",
+      "!node_modules/electron-builder${/*}",
+      "!node_modules/typescript${/*}",
+      "!node_modules/@types${/*}",
+      "!src/**/*",
+      "!**/*.ts",
+      "!**/*.map"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "suphasin01",
+      "repo": "fruit",
+      "releaseType": "release"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.business",
+      "darkModeSupport": true,
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "FruitBiz",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "menuCategory": false,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
+    },
+    "dmg": {
+      "title": "FruitBiz",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
   }
 }
